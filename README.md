@@ -19,15 +19,7 @@ The wakatime numbers tell the real story:
 <!--WAKATIME:START-->
 **Total:** 2,197 hrs 11 mins · **Daily average:** 3 hrs 20 mins
 
-```text
-Languages
-Python         808 hrs 34 mins    █████████░░░░░░░░░░░░░░░░  36.8 %
-Rust           316 hrs 24 mins    ████░░░░░░░░░░░░░░░░░░░░░  14.4 %
-TypeScript     269 hrs 26 mins    ███░░░░░░░░░░░░░░░░░░░░░░  12.3 %
-JavaScript     212 hrs 49 mins    ██░░░░░░░░░░░░░░░░░░░░░░░   9.7 %
-Markdown       115 hrs 32 mins    █░░░░░░░░░░░░░░░░░░░░░░░░   5.3 %
-CSS            107 hrs 25 mins    █░░░░░░░░░░░░░░░░░░░░░░░░   4.9 %
-```
+<img src="assets/languages.svg" alt="Languages">
 <!--WAKATIME:END-->
 
 ![Activity last year](assets/activity.svg)
