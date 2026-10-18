@@ -1,18 +1,8 @@
-Hi, Semjon aka ryleq from Germany
+<h1>Hi, I'm Semjon <sub><sup>aka ryleq</sup></sub></h1>
 
-I am a full stack dev and love Python. 
-
-My favorite programming languages are:
-
-- Python
-- Rust
-- JS/TS
-
-if my commit history looks thin, that's not because i'm not coding, it's because i have a *very* particular workflow: 
-
-I write an entire project locally, let it marinate, and then push it all in one massive single commit.
-
-The wakatime numbers tell the real story:
+<p>
+  <img src="https://img.shields.io/badge/Discord-%40ryleq-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord @ryleq">
+</p>
 
 <a href="https://wakatime.com/@ryleq">
   <picture>
@@ -20,10 +10,3 @@ The wakatime numbers tell the real story:
     <img src="assets/wakatime-light-14c1ac2c30.svg" alt="WakaTime coding activity">
   </picture>
 </a>
-
-Here is a fun project I have built: [valstats.site](https://valstats.site/)
--> It's a very advanced VALORANT Tracker 
-
-Currently I am writing a "VALORANT wrapped" project where users can see their VALORANT behaviour through an open-source data collector running in the background.
-
-discord handle: **@ryleq**
