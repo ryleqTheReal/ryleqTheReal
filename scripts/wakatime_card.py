@@ -1,4 +1,4 @@
-"""Render the WakaTime card (languages, badges, activity heatmap) as light and dark SVGs.
+"""Render the WakaTime card (totals, languages, activity heatmap) as light and dark SVGs.
 
 GitHub strips all CSS from READMEs, so the container is drawn as SVG; the README picks
 the variant with <picture> and prefers-color-scheme. Layout follows the semjon-it mails:
@@ -9,14 +9,12 @@ import base64
 import datetime as dt
 import json
 import os
-import re
 import urllib.request
 from html import escape
 from pathlib import Path
 
 USER_ID = "aa611116-2b27-42b6-864a-656d4d272a11"
 STATS_URL = f"https://wakatime.com/api/v1/users/{USER_ID}/stats"
-BADGE_URL = f"https://wakatime.com/badge/user/{USER_ID}.svg"
 DAYS_URL = "https://wakatime.com/api/v1/users/current/insights/days/last_year"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
@@ -80,30 +78,24 @@ def languages(langs, width, t):
     return "".join(out), top + len(langs) * row_h
 
 
-def badge(label, value, icon, uid):
-    """Shields-style badge matching the official WakaTime one; returns (svg, width)."""
-    lw = 24 + len(label) * 6.7 + 6
-    vw = 10 + len(value) * 5.9
-    w = lw + vw
-    texts = "".join(
-        f'<text x="{x}" y="15" fill="#010101" fill-opacity=".3">{s}</text><text x="{x}" y="14">{s}</text>'
-        for x, s in (((19 + lw) / 2, label), (lw + vw / 2, value)))
-    return (f'<clipPath id="{uid}"><rect width="{w}" height="20" rx="3"/></clipPath>'
-            f'<g clip-path="url(#{uid})"><rect width="{lw}" height="20" fill="#555"/>'
-            f'<rect x="{lw}" width="{vw}" height="20" fill="#007ec6"/>'
-            f'<rect width="{w}" height="20" fill="url(#smooth)"/></g>'
-            f'<g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">'
-            f'{icon}{texts}</g>'), w
+def hours(secs: float) -> str:
+    m = int(secs // 60)
+    return f"{m // 60:,} hrs {m % 60} mins"
 
 
-def badges(stats, width):
-    official = get(BADGE_URL)
-    icon = re.search(r"<image .*?/>", official).group(0)
-    total = re.findall(r">([^<]*hrs?[^<]*)</text>", official)[0]
-    avg = stats["human_readable_daily_average_including_other_language"]
-    left, _ = badge("daily average", avg, icon, "bl")
-    right, rw = badge("wakatime", total, icon, "br")
-    return f'{left}<g transform="translate({width - rw:.1f} 0)">{right}</g>', 20
+def totals(stats, days, width, t):
+    """Key figures like the hero value in the mails: small muted label, large bold value."""
+    year = dt.date.today().year
+    items = [("All time", stats["human_readable_total_including_other_language"])]
+    if days:
+        this_year = sum(s for d, s in days.items() if d.year == year)
+        items.insert(0, (f"This year ({year})", hours(this_year)))
+    col = width / len(items)
+    out = "".join(
+        f'<text x="{i * col}" y="12" fill="{t["muted"]}" font-size="12" letter-spacing="1">{label.upper()}</text>'
+        f'<text x="{i * col}" y="42" fill="{t["text"]}" font-size="24" font-weight="bold">{value}</text>'
+        for i, (label, value) in enumerate(items))
+    return out, 48
 
 
 def heatmap(days, t):
@@ -153,16 +145,13 @@ def card(stats, langs, days, theme):
     parts.append(f'<text x="0" y="{y + 20}" fill="{t["text"]}" font-size="20" font-weight="bold">Coding activity</text>'
                  f'<rect x="0" y="{y + 36}" width="{inner}" height="2" fill="{t["accent"]}"/>')
     y += 36 + 2 + 28
-    for piece, h in (languages(langs, inner, t), badges(stats, inner)):
+    for piece, h in (totals(stats, days, inner, t), languages(langs, inner, t)):
         parts.append(f'<g transform="translate(0 {y})">{piece}</g>')
         y += h + 24
     parts.append(f'<g transform="translate(0 {y})">{hm}</g>')
     y += hm_h + PAD
 
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
-            f'width="{width}" height="{y}" viewBox="0 0 {width} {y}">'
-            '<linearGradient id="smooth" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/>'
-            '<stop offset="1" stop-opacity=".1"/></linearGradient>'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{y}" viewBox="0 0 {width} {y}">'
             f'<rect x=".5" y=".5" width="{width - 1}" height="{y - 1}" fill="{t["card"]}" stroke="{t["line"]}"/>'
             f'<g font-family="{FONT}" transform="translate({PAD} 0)">{"".join(parts)}</g></svg>')
 
