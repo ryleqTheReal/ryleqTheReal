@@ -14,15 +14,12 @@ I write an entire project locally, let it marinate, and then push it all in one 
 
 The wakatime numbers tell the real story:
 
-<!--WAKATIME:START-->
-<img src="assets/languages.svg" alt="Languages">
-<!--WAKATIME:END-->
-
-[![WakaTime](assets/badges.svg)](https://wakatime.com/@ryleq)
-
-[![Activity last year](assets/activity.svg)](https://cdn.jsdelivr.net/gh/ryleqTheReal/ryleqTheReal@main/assets/activity.svg)
-
-<sub>Click the heatmap to hover over single days.</sub>
+<a href="https://wakatime.com/@ryleq">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wakatime-dark.svg">
+    <img src="assets/wakatime-light.svg" alt="WakaTime coding activity">
+  </picture>
+</a>
 
 Here is a fun project I have built: [valstats.site](https://valstats.site/)
 -> It's a very advanced VALORANT Tracker 
