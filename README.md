@@ -22,7 +22,9 @@ The wakatime numbers tell the real story:
 <img src="assets/languages.svg" alt="Languages">
 <!--WAKATIME:END-->
 
-![Activity last year](assets/activity.svg)
+[![Activity last year](assets/activity.svg)](https://cdn.jsdelivr.net/gh/ryleqTheReal/ryleqTheReal@main/assets/activity.svg)
+
+<sub>Click the heatmap to hover over single days.</sub>
 
 <sub>Stats are updated daily by a GitHub Action.</sub>
 
