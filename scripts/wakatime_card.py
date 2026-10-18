@@ -18,6 +18,7 @@ from pathlib import Path
 USER_ID = "aa611116-2b27-42b6-864a-656d4d272a11"
 STATS_URL = f"https://wakatime.com/api/v1/users/{USER_ID}/stats"
 DAYS_URL = "https://wakatime.com/api/v1/users/current/insights/days/last_year"
+SUMMARIES_URL = "https://wakatime.com/api/v1/users/current/summaries?start={}&end={}"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 README = ASSETS.parent / "README.md"
 
@@ -27,8 +28,29 @@ NOT_PROGRAMMING = {
     "xml", "ini", "text", "other", "csv", "svg", "git", "git config", "gitignore file",
     "docker", "dockerfile", "makefile", "batch", "log", "properties", "env", "restructuredtext",
     "ignore list", "tex", "unknown", "powershell", "astro", "vue", "svelte",
+    "image (jpeg)", "image (png)", "image (svg)", "image (gif)",
 }
+UP, DOWN = "#2DA44E", "#CF222E"
 LIMIT = 5
+# Simple Icons slug and brand color per language; the path is inlined because GitHub
+# shows the card as <img>, which never loads external resources. None = theme text color.
+ICONS_URL = "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/{}.svg"
+ICONS = {
+    "python": ("python", "#3776AB"),
+    "rust": ("rust", None),
+    "typescript": ("typescript", "#3178C6"),
+    "javascript": ("javascript", "#F7DF1E"),
+    "php": ("php", "#777BB4"),
+    "go": ("go", "#00ADD8"),
+    "java": ("openjdk", None),
+    "c": ("c", "#A8B9CC"),
+    "c++": ("cplusplus", "#00599C"),
+    "c#": ("dotnet", "#512BD4"),
+    "kotlin": ("kotlin", "#7F52FF"),
+    "lua": ("lua", "#2C2D72"),
+    "bash": ("gnubash", "#4EAA25"),
+}
+ICON = 20
 
 THEMES = {
     "light": {
@@ -55,17 +77,74 @@ def get(url: str, headers=None) -> str:
         return resp.read().decode()
 
 
+def auth(key: str) -> dict:
+    return {"Authorization": "Basic " + base64.b64encode(key.encode()).decode()}
+
+
 def fetch_days(key: str) -> dict:
-    token = base64.b64encode(key.encode()).decode()
-    days = json.loads(get(DAYS_URL, {"Authorization": f"Basic {token}"}))["data"]["days"]
+    days = json.loads(get(DAYS_URL, auth(key)))["data"]["days"]
     return {dt.date.fromisoformat(d["date"]): d.get("total", 0) or 0 for d in days}
+
+
+def fetch_month(key: str) -> dict:
+    """Seconds per language since the 1st of the current month."""
+    today = dt.date.today()
+    data = json.loads(get(SUMMARIES_URL.format(today.replace(day=1), today), auth(key)))["data"]
+    month = {}
+    for day in data:
+        for l in day["languages"]:
+            month[l["name"]] = month.get(l["name"], 0) + l["total_seconds"]
+    return month
+
+
+def ranking(seconds: dict) -> list:
+    langs = [(n, s) for n, s in seconds.items() if s > 0 and n.lower() not in NOT_PROGRAMMING]
+    return [n for n, _ in sorted(langs, key=lambda x: -x[1])]
+
+
+def rank_moves(stats, month: dict) -> dict:
+    """Position in the all-time ranking today vs. at the start of this month
+    (all time minus this month's hours). Returns name -> (before, now)."""
+    now = ranking({l["name"]: l["total_seconds"] for l in stats["languages"]})
+    before = ranking({l["name"]: l["total_seconds"] - month.get(l["name"], 0) for l in stats["languages"]})
+    return {n: (before.index(n) + 1 if n in before else len(before) + 1, i + 1) for i, n in enumerate(now)}
+
+
+def chevron(move, x, y, t):
+    """Green chevron up when the language moved up in the ranking this month, red down when it moved down."""
+    if not move or move[0] == move[1]:
+        return ""
+    before, now = move
+    up = now < before
+    tip = f"#{before} on the 1st, #{now} now"
+    pts = "0,6 5,1 10,6" if up else "0,1 5,6 10,1"
+    return (f'<g transform="translate({x} {y + 3})"><title>{tip}</title>'
+            f'<polyline points="{pts}" fill="none" stroke="{UP if up else DOWN}" stroke-width="2" '
+            f'stroke-linecap="round" stroke-linejoin="round"/></g>')
 
 
 # ---- pieces, each returns (svg, height) drawn at (0, 0) with the given width ----
 
-def languages(langs, width, t):
-    row_h, top = 28, 26
-    name_w, time_w, pct_w = 110, 120, 56
+def icon_path(slug):
+    try:
+        m = re.search(r' d="([^"]+)"', get(ICONS_URL.format(slug)))
+    except OSError:
+        return None
+    return m.group(1) if m else None
+
+
+def lang_label(lang, y, t):
+    """Logo followed by the name; the name alone when there is no logo."""
+    slug, color = ICONS.get(lang["name"].lower(), (None, None))
+    d = icon_path(slug) if slug else None
+    logo = (f'<g transform="translate(0 {y - 2}) scale({ICON / 24})"><path d="{d}" fill="{color or t["text"]}"/></g>'
+            if d else "")
+    return logo + f'<text x="{ICON + 10}" y="{y + 12}" fill="{t["text"]}" font-size="14">{escape(lang["name"])}</text>'
+
+
+def languages(langs, moves, width, t):
+    row_h, top = 30, 26
+    name_w, time_w, pct_w = 130, 130, 56
     bar_x, bar_w = name_w + time_w, width - name_w - time_w - pct_w
     top_secs = langs[0]["total_seconds"]
     out = [f'<text x="0" y="12" fill="{t["muted"]}" font-size="12" letter-spacing="1">LANGUAGES</text>']
@@ -73,8 +152,9 @@ def languages(langs, width, t):
         y = top + i * row_h
         w = max(2, round(l["total_seconds"] / top_secs * bar_w))
         out.append(
-            f'<text x="0" y="{y + 12}" fill="{t["text"]}" font-size="14">{escape(l["name"])}</text>'
-            f'<text x="{name_w}" y="{y + 12}" fill="{t["muted"]}" font-size="14">{escape(l["text"])}</text>'
+            lang_label(l, y, t)
+            + chevron(moves.get(l["name"]), name_w - 22, y, t)
+            + f'<text x="{name_w}" y="{y + 12}" fill="{t["muted"]}" font-size="14">{escape(l["text"])}</text>'
             f'<rect x="{bar_x}" y="{y + 2}" width="{bar_w}" height="12" rx="3" fill="{t["track"]}"/>'
             f'<rect x="{bar_x}" y="{y + 2}" width="{w}" height="12" rx="3" fill="{t["accent"]}"/>'
             f'<text x="{width}" y="{y + 12}" fill="{t["muted"]}" font-size="14" text-anchor="end">{l["percent"]:.1f} %</text>')
@@ -91,8 +171,7 @@ def totals(stats, days, width, t):
         items.insert(0, (sum(s for d, s in days.items() if d.year == year), f"coded in {year}"))
     col = width / len(items)
     out = "".join(
-        f'<text x="{i * col}" y="28" fill="{t["text"]}" font-size="30" font-weight="bold">{int(secs // 3600):,}'
-        f'<tspan font-size="18" font-weight="normal" fill="{t["muted"]}"> hrs</tspan></text>'
+        f'<text x="{i * col}" y="28" fill="{t["text"]}" font-size="30" font-weight="bold">{int(secs // 3600):,} hrs</text>'
         f'<text x="{i * col}" y="52" fill="{t["muted"]}" font-size="14">{caption}</text>'
         for i, (secs, caption) in enumerate(items))
     return out, 56
@@ -136,13 +215,13 @@ def heatmap(days, t):
     return svg, width, ly + CELL
 
 
-def card(stats, langs, days, theme):
+def card(stats, langs, days, moves, theme):
     t = THEMES[theme]
     hm, inner, hm_h = heatmap(days, t)
     width = inner + 2 * PAD
     parts, y = [], PAD
 
-    for piece, h in (totals(stats, days, inner, t), languages(langs, inner, t)):
+    for piece, h in (totals(stats, days, inner, t), languages(langs, moves, inner, t)):
         parts.append(f'<g transform="translate(0 {y})">{piece}</g>')
         y += h + 24
     parts.append(f'<g transform="translate(0 {y})">{hm}</g>')
@@ -160,12 +239,13 @@ def main():
     if not key:
         print("WAKATIME_API_KEY not set, heatmap stays empty")
     days = fetch_days(key) if key else {}
+    moves = rank_moves(stats, fetch_month(key)) if key else {}
     ASSETS.mkdir(exist_ok=True)
     readme = README.read_text(encoding="utf-8")
     for old in ASSETS.glob("wakatime-*.svg"):
         old.unlink()
     for theme in THEMES:
-        svg = card(stats, langs, days, theme)
+        svg = card(stats, langs, days, moves, theme)
         # Content hash in the file name, otherwise browsers keep showing old stats.
         # A ?v= query does not work: GitHub's /raw/ redirect drops it.
         name = f"wakatime-{theme}-{hashlib.sha1(svg.encode()).hexdigest()[:10]}.svg"
