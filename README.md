@@ -16,8 +16,8 @@ The wakatime numbers tell the real story:
 
 <a href="https://wakatime.com/@ryleq">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/wakatime-dark.svg">
-    <img src="assets/wakatime-light.svg" alt="WakaTime coding activity">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wakatime-dark.svg?v=744302ea19">
+    <img src="assets/wakatime-light.svg?v=27dc9b9c19" alt="WakaTime coding activity">
   </picture>
 </a>
 
