@@ -162,12 +162,15 @@ def main():
     days = fetch_days(key) if key else {}
     ASSETS.mkdir(exist_ok=True)
     readme = README.read_text(encoding="utf-8")
+    for old in ASSETS.glob("wakatime-*.svg"):
+        old.unlink()
     for theme in THEMES:
         svg = card(stats, langs, days, theme)
-        (ASSETS / f"wakatime-{theme}.svg").write_text(svg, encoding="utf-8")
-        # content hash in the URL, otherwise GitHub's image cache keeps showing old stats
-        version = hashlib.sha1(svg.encode()).hexdigest()[:10]
-        readme = re.sub(rf'assets/wakatime-{theme}\.svg(\?v=\w+)?', f"assets/wakatime-{theme}.svg?v={version}", readme)
+        # Content hash in the file name, otherwise browsers keep showing old stats.
+        # A ?v= query does not work: GitHub's /raw/ redirect drops it.
+        name = f"wakatime-{theme}-{hashlib.sha1(svg.encode()).hexdigest()[:10]}.svg"
+        (ASSETS / name).write_text(svg, encoding="utf-8")
+        readme = re.sub(rf'assets/wakatime-{theme}[^"]*\.svg(\?v=\w+)?', f"assets/{name}", readme)
     README.write_text(readme, encoding="utf-8")
 
 
