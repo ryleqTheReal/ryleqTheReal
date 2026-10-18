@@ -26,8 +26,6 @@ The wakatime numbers tell the real story:
 
 <sub>Click the heatmap to hover over single days.</sub>
 
-<sub>Stats are updated daily by a GitHub Action.</sub>
-
 Here is a fun project I have built: [valstats.site](https://valstats.site/)
 -> It's a very advanced VALORANT Tracker 
 
