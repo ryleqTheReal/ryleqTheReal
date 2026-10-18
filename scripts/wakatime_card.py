@@ -2,7 +2,7 @@
 
 GitHub strips all CSS from READMEs, so the container is drawn as SVG; the README picks
 the variant with <picture> and prefers-color-scheme. Layout follows the semjon-it mails:
-bordered card, 32px padding, title with a 2px blue rule.
+bordered card, 32px padding, navy/gray text.
 The heatmap needs WAKATIME_API_KEY (daily data is private); the rest is public.
 """
 import base64
@@ -81,24 +81,21 @@ def languages(langs, width, t):
     return "".join(out), top + len(langs) * row_h
 
 
-def hours(secs: float) -> str:
-    m = int(secs // 60)
-    return f"{m // 60:,} hrs {m % 60} mins"
-
-
 def totals(stats, days, width, t):
-    """Key figures like the hero value in the mails: small muted label, large bold value."""
+    """Key figures: large bold hours, a plain caption underneath."""
     year = dt.date.today().year
-    items = [("All time", stats["human_readable_total_including_other_language"])]
+    since = stats.get("human_readable_range", "").replace("since ", "")
+    since = re.sub(r"(\w+) \d+ (\d{4})", r"\1 \2", since)  # "Oct 24 2022" -> "Oct 2022"
+    items = [(stats["total_seconds_including_other_language"], f"coded since {since}" if since else "coded in total")]
     if days:
-        this_year = sum(s for d, s in days.items() if d.year == year)
-        items.insert(0, (f"This year ({year})", hours(this_year)))
+        items.insert(0, (sum(s for d, s in days.items() if d.year == year), f"coded in {year}"))
     col = width / len(items)
     out = "".join(
-        f'<text x="{i * col}" y="12" fill="{t["muted"]}" font-size="12" letter-spacing="1">{label.upper()}</text>'
-        f'<text x="{i * col}" y="42" fill="{t["text"]}" font-size="24" font-weight="bold">{value}</text>'
-        for i, (label, value) in enumerate(items))
-    return out, 48
+        f'<text x="{i * col}" y="28" fill="{t["text"]}" font-size="30" font-weight="bold">{int(secs // 3600):,}'
+        f'<tspan font-size="18" font-weight="normal" fill="{t["muted"]}"> hrs</tspan></text>'
+        f'<text x="{i * col}" y="52" fill="{t["muted"]}" font-size="14">{caption}</text>'
+        for i, (secs, caption) in enumerate(items))
+    return out, 56
 
 
 def heatmap(days, t):
@@ -145,9 +142,6 @@ def card(stats, langs, days, theme):
     width = inner + 2 * PAD
     parts, y = [], PAD
 
-    parts.append(f'<text x="0" y="{y + 20}" fill="{t["text"]}" font-size="20" font-weight="bold">Coding activity</text>'
-                 f'<rect x="0" y="{y + 36}" width="{inner}" height="2" fill="{t["accent"]}"/>')
-    y += 36 + 2 + 28
     for piece, h in (totals(stats, days, inner, t), languages(langs, inner, t)):
         parts.append(f'<g transform="translate(0 {y})">{piece}</g>')
         y += h + 24
