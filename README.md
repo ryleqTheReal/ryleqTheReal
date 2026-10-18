@@ -15,12 +15,10 @@ I write an entire project locally, let it marinate, and then push it all in one 
 The wakatime numbers tell the real story:
 
 <!--WAKATIME:START-->
-**Total:** 2,197 hrs 11 mins · **Daily average:** 3 hrs 20 mins
-
 <img src="assets/languages.svg" alt="Languages">
 <!--WAKATIME:END-->
 
-<p align="right"><a href="https://wakatime.com/@ryleq"><img src="https://wakatime.com/badge/user/aa611116-2b27-42b6-864a-656d4d272a11.svg" alt="wakatime"></a></p>
+[![WakaTime](assets/badges.svg)](https://wakatime.com/@ryleq)
 
 [![Activity last year](assets/activity.svg)](https://cdn.jsdelivr.net/gh/ryleqTheReal/ryleqTheReal@main/assets/activity.svg)
 
