@@ -7,8 +7,10 @@ The heatmap needs WAKATIME_API_KEY (daily data is private); the rest is public.
 """
 import base64
 import datetime as dt
+import hashlib
 import json
 import os
+import re
 import urllib.request
 from html import escape
 from pathlib import Path
@@ -17,6 +19,7 @@ USER_ID = "aa611116-2b27-42b6-864a-656d4d272a11"
 STATS_URL = f"https://wakatime.com/api/v1/users/{USER_ID}/stats"
 DAYS_URL = "https://wakatime.com/api/v1/users/current/insights/days/last_year"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
+README = ASSETS.parent / "README.md"
 
 # Markup, config and data formats and frameworks WakaTime counts as "languages"
 NOT_PROGRAMMING = {
@@ -164,8 +167,14 @@ def main():
         print("WAKATIME_API_KEY not set, heatmap stays empty")
     days = fetch_days(key) if key else {}
     ASSETS.mkdir(exist_ok=True)
+    readme = README.read_text(encoding="utf-8")
     for theme in THEMES:
-        (ASSETS / f"wakatime-{theme}.svg").write_text(card(stats, langs, days, theme), encoding="utf-8")
+        svg = card(stats, langs, days, theme)
+        (ASSETS / f"wakatime-{theme}.svg").write_text(svg, encoding="utf-8")
+        # content hash in the URL, otherwise GitHub's image cache keeps showing old stats
+        version = hashlib.sha1(svg.encode()).hexdigest()[:10]
+        readme = re.sub(rf'assets/wakatime-{theme}\.svg(\?v=\w+)?', f"assets/wakatime-{theme}.svg?v={version}", readme)
+    README.write_text(readme, encoding="utf-8")
 
 
 if __name__ == "__main__":
