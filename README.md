@@ -6,7 +6,7 @@
 
 <a href="https://wakatime.com/@ryleq">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/wakatime-dark-d116212b7e.svg">
-    <img src="assets/wakatime-light-93e2209c32.svg" alt="WakaTime coding activity">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wakatime-dark-519d42108b.svg">
+    <img src="assets/wakatime-light-1c6e54a57c.svg" alt="WakaTime coding activity">
   </picture>
 </a>
