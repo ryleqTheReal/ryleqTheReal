@@ -161,19 +161,27 @@ def languages(langs, moves, width, t):
     return "".join(out), top + len(langs) * row_h
 
 
+def yesterday_delta(days, t):
+    """Green "+2h 15m" next to the year total: what yesterday added."""
+    yesterday = dt.date.today() - dt.timedelta(days=1)
+    mins = int(days.get(yesterday, 0) // 60)
+    text = f"+{mins // 60}h {mins % 60}m" if mins >= 60 else f"+{mins}m"
+    return (f'<tspan dx="10" fill="{UP}" font-size="16"><title>added on {yesterday}</title>{text} yesterday</tspan>')
+
+
 def totals(stats, days, width, t):
     """Key figures: large bold hours, a plain caption underneath."""
     year = dt.date.today().year
     since = stats.get("human_readable_range", "").replace("since ", "")
     since = re.sub(r"(\w+) \d+ (\d{4})", r"\1 \2", since)  # "Oct 24 2022" -> "Oct 2022"
-    items = [(stats["total_seconds_including_other_language"], f"coded since {since}" if since else "coded in total")]
+    items = [(stats["total_seconds_including_other_language"], f"coded since {since}" if since else "coded in total", "")]
     if days:
-        items.insert(0, (sum(s for d, s in days.items() if d.year == year), f"coded in {year}"))
+        items.insert(0, (sum(s for d, s in days.items() if d.year == year), f"coded in {year}", yesterday_delta(days, t)))
     col = width / len(items)
     out = "".join(
-        f'<text x="{i * col}" y="28" fill="{t["text"]}" font-size="30" font-weight="bold">{int(secs // 3600):,} hrs</text>'
+        f'<text x="{i * col}" y="28" fill="{t["text"]}" font-size="30" font-weight="bold">{int(secs // 3600):,} hrs{delta}</text>'
         f'<text x="{i * col}" y="52" fill="{t["muted"]}" font-size="14">{caption}</text>'
-        for i, (secs, caption) in enumerate(items))
+        for i, (secs, caption, delta) in enumerate(items))
     return out, 56
 
 
